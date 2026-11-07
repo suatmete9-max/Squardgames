@@ -1,0 +1,2 @@
+# Format: question | correct answer | wrong 1 | wrong 2 | wrong 3 | difficulty (1 easy, 2 medium, 3 hard)
+Which planet is closest to the Sun?|Mercury|Venus|Earth|Mars|1

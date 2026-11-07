@@ -1,0 +1,1 @@
+{"name":"squardgames","version":"2.0.0","scripts":{"start":"node server.js","add-questions":"node tools/add-questions.js","count-questions":"node tools/add-questions.js --count"},"engines":{"node":">=18"}}
