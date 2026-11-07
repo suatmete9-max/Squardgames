@@ -1,3 +1,3 @@
-// Firebase par daalne ke baad yahan Render server ka link likho, jaise: 'https://quizworld.onrender.com'
-// Local (npm start) par isse khaali ('') chhod do.
-window.CFG={server:''};
+// Where the game server (API) lives. Same-origin hosting (Render/own server): leave ''.
+// Firebase Hosting: put your backend address, e.g. 'https://squardgames-api.onrender.com' (no trailing slash).
+window.SQ_API='https://quizarena-2r54.onrender.com';

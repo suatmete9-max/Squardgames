@@ -61,9 +61,12 @@ function api(u,b,ip,j){const p=u.pathname.slice(5),now=Date.now();
   if(db.msgs.length>500)db.msgs.shift();save();mail(sub,body,em).then(ok=>j({ok:1,sent:ok}));return}
  if(p=='admin'){if(!process.env.ADMIN_KEY||u.searchParams.get('key')!=process.env.ADMIN_KEY)return j({e:'no'},403);return j(db.msgs)}
  j({e:'404'},404)}
+const ORIGINS=(process.env.ALLOWED_ORIGINS||'https://squardgames.web.app,https://squardgames.firebaseapp.com').split(',').map(s=>s.trim());// website(s) allowed to call this API from another domain (Firebase Hosting)
 const MT={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.ico':'image/x-icon'};
 http.createServer((q,r)=>{const u=new URL(q.url,'http://x'),ip=(q.headers['x-forwarded-for']||q.socket.remoteAddress||'').split(',')[0].trim();
- const j=(o,c=200)=>{r.writeHead(c,{'content-type':'application/json'});r.end(JSON.stringify(o))};
+ let cors={};const og=q.headers.origin;if(og&&(ORIGINS.includes(og)||/^http:\/\/localhost(:\d+)?$/.test(og)))cors={'access-control-allow-origin':og,'vary':'Origin','access-control-allow-headers':'content-type','access-control-allow-methods':'GET,POST,OPTIONS'};
+ const j=(o,c=200)=>{r.writeHead(c,{'content-type':'application/json',...cors});r.end(JSON.stringify(o))};
+ if(q.method=='OPTIONS'){r.writeHead(204,cors);return r.end()}
  if(u.pathname.startsWith('/api/')){hits[ip]=(hits[ip]||0)+1;if(hits[ip]>240)return j({e:'rate'},429);
   if(q.method!='POST')return api(u,{},ip,j);let b='';q.on('data',d=>{b+=d;if(b.length>5e3)q.destroy()});
   return q.on('end',()=>{try{api(u,JSON.parse(b||'{}'),ip,j)}catch{j({e:'bad'},400)}})}

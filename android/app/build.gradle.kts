@@ -12,7 +12,7 @@ android {
         versionCode = 1
         versionName = "1.0"
         // >>> CHANGE THIS to your live website address (must end with /) <<<
-        buildConfigField("String", "SITE_URL", "\"https://YOUR-SITE.onrender.com/\"")
+        buildConfigField("String", "SITE_URL", "\"https://squardgames.web.app/\"")
     }
     buildTypes { release { isMinifyEnabled = false } }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
