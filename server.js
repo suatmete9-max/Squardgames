@@ -36,7 +36,7 @@ function api(u,b,ip,j){const p=u.pathname.slice(5),now=Date.now();
   save();return j({id,name:n,country:c,key})}
  if(p=='restore'){cl[ip]=(cl[ip]||0)+1;if(cl[ip]>10)return j({e:'limit'},429);const id=String(b.id||'').trim().toUpperCase(),P=db.players[id];
   if(!P||!P.kh||sha(String(b.key||'').trim().toUpperCase())!==P.kh)return j({e:'bad'},400);return j({id,name:P.name,country:P.c})}
- if(p=='start'){if(!db.players[b.id]||!(b.game in RATE))return j({e:'bad'},400);const sid=crypto.randomBytes(8).toString('hex');sess[sid]={id:b.id,g:b.game,t:now,score:0,lives:3,level:1,asked:0,right:0,idle:0,seen:[]};return j({sid})}
+ if(p=='start'){if(!db.players[b.id])return j({e:'player'},400);if(!(b.game in RATE))return j({e:'bad'},400);const sid=crypto.randomBytes(8).toString('hex');sess[sid]={id:b.id,g:b.game,t:now,score:0,lives:3,level:1,asked:0,right:0,idle:0,seen:[]};return j({sid})}
  if(p=='score'){const s=sess[b.sid];delete sess[b.sid];if(!s||s.id!=b.id)return j({e:'sess'},400);
   const sec=(now-s.t)/1000,qz=s.g=='quiz',sc=qz?s.score:Math.floor(+b.score);if(!(sc>0)||(!qz&&(sec<5||sc>BASE[s.g]+RATE[s.g]*sec)))return j({e:'rejected'},400);
   const ns=Math.min(CAP,Math.round(sc*NORM[s.g]));db.scores.push({id:s.id,g:s.g,s:ns,t:now});const P=db.players[s.id];if(P&&P.ref&&!P.rok&&ns>0){P.rok=1;db.refs.push({by:P.ref,id:s.id,t:now})}save();return j({ok:1,score:ns})}

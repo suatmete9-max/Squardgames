@@ -41,7 +41,10 @@ function home(){app.innerHTML='<div class=grid>'+Object.entries(TH).map(([k,v])=
  $('#iv').onclick=()=>{navigator.clipboard.writeText(location.origin+'/?ref='+U.id);$('#iv').textContent='✅ '+t('cd')};$('#bk').onclick=()=>keyModal(false);showOn()}
 async function play(g){const v=TH[g],my=rt;cur=g;app.innerHTML='<div class=gm style="--c:'+v.c+';--bg:'+v.bg+';--f:'+v.f+'"><h2 style="margin:4px">'+v.i+' '+v.n+'</h2><div class=hud><span id=hs></span><span id=hi></span></div><div id=gb></div></div>';
  const hud=(s,i)=>{$('#hs')&&($('#hs').textContent=t('sc')+': '+Math.min(CAP,Math.round(s*(NRM[g]||1))));$('#hi')&&($('#hi').textContent=i||'')};
- const r=await post('start',{id:U.id,game:g});if(my!=rt)return;sid=r.sid;
+ const r=await post('start',{id:U.id,game:g});if(my!=rt)return;
+ if(!r.sid){if(r.e=='player'){localStorage.removeItem('sq_u');U=null;alert('The server was reset and no longer knows this Player ID. Please restore your ID (Player ID + key) or create a new one.');return route()}
+  $('#gb').innerHTML='<p>⏳ '+(r.e?'Game server problem ('+r.e+')':'Server is waking up or unreachable')+'.<br>Wait a minute, then <button class=big onclick="route()">Retry</button></p>';return}
+ sid=r.sid;
  let sc2=0;stop=G[g]($('#gb'),hud,async sc=>{if(window.SQApp&&!sc2&&sc>0&&stop&&stop.resume&&await askSC()){sc2=1;return stop.resume()}const r=await post('score',{sid,id:U.id,score:sc});over(r.score!=null?r.score:sc)},n=>ADS.level(n),()=>sid)}
 function askSC(){return new Promise(res=>{const m=modal('<h2>'+t('over')+'</h2><p>🎬 Watch a short video for a second chance?</p><div class=row><button class=big id=sy>▶ Watch</button><button id=sn>No thanks</button></div>');m.querySelector('.x').remove();
  $('#sy').onclick=async()=>{m.remove();res(await ADS.rewarded())};$('#sn').onclick=()=>{m.remove();res(false)}})}

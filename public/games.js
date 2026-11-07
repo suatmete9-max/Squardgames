@@ -17,7 +17,7 @@ G.water=(el,hud,end,lv)=>{let sc=0,tm=120,sel=-1,tb=[],n=0,pz=0;const C=['#ff3d7
 
 G.quiz=(el,hud,end,lv,S)=>{let dead=0,iv,pz=0,last=0;el.className='qz';
  const hd=(r,n)=>hud(r.score,'✅'+(r.right||0)+' · Lv '+(r.lv||r.level)+(n?' · Q'+n+'/10':'')+(r.idle?' · ⚠ '+r.idle+'/3':''));
- async function nxt(){const r=await post('qnext',{sid:S(),id:U.id});if(dead)return;if(!r.q){dead=1;return end(0)}
+ async function nxt(){const r=await post('qnext',{sid:S(),id:U.id});if(dead)return;if(!r.q){dead=1;el.innerHTML='<p>⚠ Could not load a question ('+(r.e||'server error')+').<br><button class=big onclick="route()">Retry</button></p>';return}
   hd(r,r.n);let tm=15;el.innerHTML=(r.f?'<img class=fgb src="https://flagcdn.com/w160/'+r.f+'.png">':'')+'<div class=qq>'+esc(r.q)+'</div><div class=qt id=qt>⏱ 15</div><div class=bar><i id=br></i></div><div class=qo>'+r.o.map((o,i)=>'<button data-i='+i+'>'+esc(o)+'</button>').join('')+'</div>';
   const bs=[...el.querySelectorAll('.qo button')];bs.forEach(b=>b.onclick=()=>ans(+b.dataset.i,bs));
   iv=setInterval(()=>{if(ADS.hold)return;tm-=.1;const e=document.getElementById('br');if(e)e.style.width=tm/15*100+'%';const qt=document.getElementById('qt');if(qt)qt.textContent='⏱ '+Math.max(0,Math.ceil(tm));if(tm<=0){clearInterval(iv);ans(-1,bs)}},100)}
