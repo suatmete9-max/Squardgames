@@ -1,0 +1,25 @@
+<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content=noindex><title>SquardGames Admin</title>
+<style>body{font-family:"Segoe UI",Arial;background:#0b0630;color:#fff;margin:0;padding:12px}table{width:100%;border-collapse:collapse;font-size:13px}td,th{border:1px solid #4a3a9a;padding:5px;vertical-align:top}th{background:#2a1a6e}
+input,select,button,textarea{font:inherit;padding:5px;border-radius:6px;border:1px solid #7c4dff;background:#1d1150;color:#fff}h2{color:#ffe14d}.w{max-width:230px;word-break:break-all}.box{overflow:auto;margin-bottom:22px}.st-pending{background:#4d3b00}.st-paid{background:#0b3d1b}.st-rejected{background:#4a0d0d}.st-approved{background:#0b2d4d}</style>
+<h1>SquardGames Admin</h1>
+<div id=lg><input id=k type=password placeholder="Admin key"> <button onclick="K=$('#k').value;sessionStorage.k=K;load()">Login</button></div>
+<div id=ad hidden>
+<p id=sum></p><button onclick=load()>↻ Refresh</button>
+<h2>🏆 Winners (copy Player IDs to match claims)</h2><div class=box id=win></div>
+<h2>💰 Prize claims</h2><div class=box id=cl></div>
+<h2>🎧 Support messages</h2><div class=box id=su></div></div>
+<script src=config.js></script><script>
+const API=(window.SQ_API||'')+'/api/',$=s=>document.querySelector(s);let K=sessionStorage.k||'';
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt()+';'),ist=t=>new Date(t+19800000).toISOString().replace('T',' ').slice(0,16)+' IST';
+const P=(u,d)=>fetch(API+u,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:K,...d})}).then(r=>r.json()).catch(()=>({e:'net'}));
+const bt=(t,rows)=>'<b>'+t+'</b><table><tr><th>#</th><th>Player ID</th><th>Name</th><th>Score/Invites</th></tr>'+(rows.length?rows.map(r=>'<tr><td>'+r.r+'</td><td>'+esc(r.id)+'</td><td>'+esc(r.n)+' ('+esc(r.c)+')</td><td>'+r.s+'</td></tr>').join(''):'<tr><td colspan=4>-</td></tr>')+'</table><br>';
+async function load(){const r=await P('admin/list',{});if(r.e){$('#lg').hidden=false;$('#ad').hidden=true;alert(r.e=='net'?'Server not reachable (wait 1 min, Render is waking up)':'Wrong key');return}
+ $('#lg').hidden=true;$('#ad').hidden=false;$('#sum').textContent='Players: '+r.players+' · Claims: '+r.claims.length+' · Support: '+r.support.length;
+ $('#win').innerHTML=bt('Last week - game top 3',r.lw)+bt('This week - game top 3 (so far)',r.cw)+bt('Last week - invite top 3',r.lr)+bt('This week - invite top 3 (so far)',r.cr);
+ const row=(x,sts,claim)=>'<tr class="st-'+x.st+'"><td>#'+x.n+'<br>'+ist(x.t)+'</td><td>'+esc(x.id)+'<br>'+esc(x.nm)+' ('+esc(x.cc)+')</td><td class=w>'+(claim?esc(x.ty)+'<br><b>'+esc(x.w)+'</b> <button onclick="navigator.clipboard.writeText(\''+esc(x.w)+'\')">Copy</button>':esc(x.m))+'<br><a style=color:#ffe14d href="mailto:'+esc(x.em)+'">'+esc(x.em)+'</a></td><td><select id=s'+x.n+'>'+sts.map(s=>'<option'+(s==x.st?' selected':'')+'>'+s+'</option>').join('')+'</select></td><td><input id=n'+x.n+' value="'+esc(x.note)+'" placeholder="note to player"><br><input id=t'+x.n+' value="'+esc(x.tx)+'" placeholder="TX hash"></td><td><button onclick=sv('+x.n+')>Save</button></td></tr>';
+ const th='<tr><th>No / Time</th><th>Player</th><th>Details</th><th>Status</th><th>Note / TX</th><th></th></tr>';
+ $('#cl').innerHTML='<table>'+th+r.claims.map(x=>row(x,['pending','approved','paid','rejected'],1)).join('')+'</table>';
+ $('#su').innerHTML='<table>'+th+r.support.map(x=>row(x,['new','done'],0)).join('')+'</table>'}
+async function sv(n){const r=await P('admin/set',{n,st:$('#s'+n).value,note:$('#n'+n).value,tx:$('#t'+n).value});alert(r.ok?'Saved':'Error');load()}
+if(K)load();
+</script>

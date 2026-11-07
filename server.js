@@ -2,9 +2,9 @@ const http=require('http'),fs=require('fs'),path=require('path'),crypto=require(
 const PORT=process.env.PORT||3000,TZ=+(process.env.TZ_OFFSET||5.5),DB=path.join(process.env.DATA_DIR||__dirname,'data.json'),PUB=path.join(__dirname,'public');
 let db={players:{},scores:[],bonus:[],refs:[],msgs:[]};try{db=JSON.parse(fs.readFileSync(DB))}catch{}db.refs=db.refs||[];db.msgs=db.msgs||[];
 const save=()=>fs.writeFile(DB,JSON.stringify(db),()=>{});setInterval(save,30000);
-const sess={},online={},hits={},regs={},cl={},tls=require('tls');
+const sess={},online={},hits={},regs={},cl={},adm={},tls=require('tls'),sha=s=>crypto.createHash('sha256').update(s).digest('hex');
 const NORM={water:1.5,quiz:1,birds:.12,jewel:.4},CAP=3000;// keep in sync with NRM/CAP in public/app.js. Balances points: similar score per minute in every game, max CAP per game
-setInterval(()=>{for(const i in cl)delete cl[i]},36e5);
+setInterval(()=>{for(const i in cl)delete cl[i];for(const i in adm)delete adm[i]},36e5);
 setInterval(()=>{for(const i in hits)delete hits[i]},60000);setInterval(()=>{for(const i in regs)delete regs[i]},864e5);
 const RATE={water:6,quiz:0,birds:80,jewel:30},BASE={water:1500,quiz:0,birds:5000,jewel:3000};
 const QF=path.join(__dirname,'data','questions.json');let Q=[];
@@ -13,13 +13,13 @@ loadQ();fs.watchFile(QF,{interval:2000},loadQ);
 setInterval(()=>{const o=Date.now()-36e5;for(const i in sess)if(sess[i].t<o)delete sess[i]},6e5);
 const k=(t,p)=>{const L=t+TZ*36e5,d=Math.floor(L/864e5);if(p=='d')return d;if(p=='w')return Math.floor((d+3)/7);const x=new Date(L);return x.getUTCFullYear()*12+x.getUTCMonth()};
 const mask=id=>id.slice(0,3)+'••'+id.slice(-2);
-function board(p,off,n){const K=k(Date.now(),p)-off,best={},tot={};
+function board(p,off,n,full){const K=k(Date.now(),p)-off,best={},tot={};
  db.scores.forEach(s=>{if(k(s.t,p)!=K)return;const m=best[s.id]=best[s.id]||{};m[s.g]=Math.max(m[s.g]||0,s.s)});
  for(const id in best)tot[id]=Object.values(best[id]).reduce((a,b)=>a+b,0);
  db.bonus.forEach(x=>{if(k(x.t,p)==K)tot[x.id]=(tot[x.id]||0)+x.pts});
- return Object.entries(tot).sort((a,b)=>b[1]-a[1]).slice(0,n).map(([id,s],i)=>{const P=db.players[id]||{};return{r:i+1,id:mask(id),n:P.name||'?',c:P.c||'',s}})}
-function refboard(off,n){const K=k(Date.now(),'w')-off,c={};db.refs.forEach(x=>{if(k(x.t,'w')==K)c[x.by]=(c[x.by]||0)+1});
- return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,n).map(([id,s],i)=>{const P=db.players[id]||{};return{r:i+1,id:mask(id),n:P.name||'?',c:P.c||'',s}})}
+ return Object.entries(tot).sort((a,b)=>b[1]-a[1]).slice(0,n).map(([id,s],i)=>{const P=db.players[id]||{};return{r:i+1,id:full?id:mask(id),n:P.name||'?',c:P.c||'',s}})}
+function refboard(off,n,full){const K=k(Date.now(),'w')-off,c={};db.refs.forEach(x=>{if(k(x.t,'w')==K)c[x.by]=(c[x.by]||0)+1});
+ return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,n).map(([id,s],i)=>{const P=db.players[id]||{};return{r:i+1,id:full?id:mask(id),n:P.name||'?',c:P.c||'',s}})}
 // Direct e-mail via SMTP (Gmail: SMTP_USER + SMTP_PASS = app password). Returns true if sent.
 function mail(subject,text,replyTo){return new Promise(res=>{const U=process.env.SMTP_USER,PW=process.env.SMTP_PASS;if(!U||!PW)return res(false);
  const to=process.env.MAIL_TO||'suatmete9@gmail.com',b64=s=>Buffer.from(s).toString('base64');let fin=0;const end=v=>{if(!fin){fin=1;try{sock.destroy()}catch{}res(v)}};
@@ -32,8 +32,10 @@ function api(u,b,ip,j){const p=u.pathname.slice(5),now=Date.now();
  if(p=='register'){const n=String(b.name||'').replace(/[<>&"'`]/g,'').trim().slice(0,20);if(n.length<2)return j({e:'name'},400);
   regs[ip]=(regs[ip]||0)+1;if(regs[ip]>5)return j({e:'limit'},429);
   const c=/^[A-Z]{2}$/.test(b.country)?b.country:'',id='SQ-'+crypto.randomBytes(3).toString('hex').toUpperCase();
-  db.players[id]={name:n,c,t:now,ref:(b.ref&&db.players[b.ref]&&b.ref!=id&&regs[ip]<=2)?b.ref:''};
-  save();return j({id,name:n,country:c})}
+  const key=crypto.randomBytes(4).toString('hex').toUpperCase();db.players[id]={name:n,c,t:now,kh:sha(key),ref:(b.ref&&db.players[b.ref]&&b.ref!=id&&regs[ip]<=2)?b.ref:''};
+  save();return j({id,name:n,country:c,key})}
+ if(p=='restore'){cl[ip]=(cl[ip]||0)+1;if(cl[ip]>10)return j({e:'limit'},429);const id=String(b.id||'').trim().toUpperCase(),P=db.players[id];
+  if(!P||!P.kh||sha(String(b.key||'').trim().toUpperCase())!==P.kh)return j({e:'bad'},400);return j({id,name:P.name,country:P.c})}
  if(p=='start'){if(!db.players[b.id]||!(b.game in RATE))return j({e:'bad'},400);const sid=crypto.randomBytes(8).toString('hex');sess[sid]={id:b.id,g:b.game,t:now,score:0,lives:3,level:1,asked:0,right:0,idle:0,seen:[]};return j({sid})}
  if(p=='score'){const s=sess[b.sid];delete sess[b.sid];if(!s||s.id!=b.id)return j({e:'sess'},400);
   const sec=(now-s.t)/1000,qz=s.g=='quiz',sc=qz?s.score:Math.floor(+b.score);if(!(sc>0)||(!qz&&(sec<5||sc>BASE[s.g]+RATE[s.g]*sec)))return j({e:'rejected'},400);
@@ -56,10 +58,14 @@ function api(u,b,ip,j){const p=u.pathname.slice(5),now=Date.now();
   const em=String(b.email||'').trim().slice(0,100);if(!/^\S+@\S+\.\S+$/.test(em))return j({e:'email'},400);
   const ist=new Date(now+19800000).toISOString().replace('T',' ').slice(0,16)+' IST';let sub,body;
   if(p=='claim'){const w=String(b.wallet||'').trim();if(!/^0x[a-fA-F0-9]{40}$/.test(w))return j({e:'wallet'},400);const ty=['weekly','invite'].includes(b.type)?b.type:'weekly';
-   sub='SquardGames Prize Claim - '+id;body='Prize type: '+ty+'\nPlayer ID: '+id+'\nName: '+P.name+'\nCountry: '+P.c+'\nWallet (BNB BEP20): '+w+'\nEmail: '+em+'\nTime: '+ist;db.msgs.push({t:now,p,id,ty,w,em})}
-  else{const m=String(b.msg||'').trim().slice(0,1000);if(m.length<3)return j({e:'msg'},400);sub='SquardGames Support - '+id;body='Player ID: '+id+'\nName: '+P.name+'\nCountry: '+P.c+'\nEmail: '+em+'\nTime: '+ist+'\n\n'+m;db.msgs.push({t:now,p,id,em,m})}
-  if(db.msgs.length>500)db.msgs.shift();save();mail(sub,body,em).then(ok=>j({ok:1,sent:ok}));return}
- if(p=='admin'){if(!process.env.ADMIN_KEY||u.searchParams.get('key')!=process.env.ADMIN_KEY)return j({e:'no'},403);return j(db.msgs)}
+   sub='SquardGames Prize Claim - '+id;body='Prize type: '+ty+'\nPlayer ID: '+id+'\nName: '+P.name+'\nCountry: '+P.c+'\nWallet (BNB BEP20): '+w+'\nEmail: '+em+'\nTime: '+ist;db.msgs.push({n:db.cn=(db.cn||0)+1,t:now,p,id,nm:P.name,cc:P.c,ty,w,em,st:'pending',note:'',tx:''})}
+  else{const m=String(b.msg||'').trim().slice(0,1000);if(m.length<3)return j({e:'msg'},400);sub='SquardGames Support - '+id;body='Player ID: '+id+'\nName: '+P.name+'\nCountry: '+P.c+'\nEmail: '+em+'\nTime: '+ist+'\n\n'+m;db.msgs.push({n:db.cn=(db.cn||0)+1,t:now,p,id,nm:P.name,cc:P.c,em,m,st:'new',note:'',tx:''})}
+  if(db.msgs.length>5000)db.msgs.shift();save();const nn=db.cn;mail(sub,body,em).then(ok=>j({ok:1,sent:ok,n:nn}));return}
+ if(p=='myclaims'){const id=String(u.searchParams.get('id')||'').toUpperCase();return j(db.msgs.filter(x=>x.id==id&&x.p=='claim').map(x=>({n:x.n,t:x.t,ty:x.ty,st:x.st,note:x.note,tx:x.tx})).reverse())}
+ if(p.startsWith('admin/')){const K=process.env.ADMIN_KEY;adm[ip]=adm[ip]||0;if(!K||adm[ip]>=10||String(b.key||'')!==K){if(K)adm[ip]++;return j({e:'no'},403)}
+  if(p=='admin/list')return j({claims:db.msgs.filter(x=>x.p=='claim').reverse(),support:db.msgs.filter(x=>x.p=='support').reverse(),players:Object.keys(db.players).length,lw:board('w',1,3,1),cw:board('w',0,3,1),lr:refboard(1,3,1),cr:refboard(0,3,1)});
+  if(p=='admin/set'){const x=db.msgs.find(z=>z.n==b.n);if(!x)return j({e:'n'},404);if(['pending','approved','paid','rejected','new','done'].includes(b.st))x.st=b.st;x.note=String(b.note||'').slice(0,300);x.tx=String(b.tx||'').slice(0,120);save();return j({ok:1})}
+  return j({e:'404'},404)}
  j({e:'404'},404)}
 const ORIGINS=(process.env.ALLOWED_ORIGINS||'https://squardgames.web.app,https://squardgames.firebaseapp.com').split(',').map(s=>s.trim());// website(s) allowed to call this API from another domain (Firebase Hosting)
 const MT={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.ico':'image/x-icon'};
