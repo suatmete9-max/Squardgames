@@ -34,6 +34,11 @@ function api(u,b,ip,j){const p=u.pathname.slice(5),now=Date.now();
   const c=/^[A-Z]{2}$/.test(b.country)?b.country:'',id='SQ-'+crypto.randomBytes(3).toString('hex').toUpperCase();
   const key=crypto.randomBytes(4).toString('hex').toUpperCase(),rf=String(b.ref||'').trim().toUpperCase();db.players[id]={name:n,c,t:now,kh:sha(key),rk:key,ref:(rf&&db.players[rf]&&rf!=id&&regs[ip]<=2)?rf:''};
   save();return j({id,name:n,country:c,key})}
+ if(p=='reclaim'){const id=String(b.id||'').trim().toUpperCase();if(!/^SQ-[0-9A-F]{6}$/.test(id))return j({e:'bad'},400);const P=db.players[id],kk=String(b.key||'').trim().toUpperCase();// lets the app silently re-create its own account if the server lost its data
+  if(P){if(P.kh&&/^[0-9A-F]{8}$/.test(kk)&&sha(kk)!==P.kh)return j({e:'bad'},400);if(!P.kh){const nk=crypto.randomBytes(4).toString('hex').toUpperCase();P.kh=sha(nk);P.rk=nk;save();return j({ok:1,key:nk})}return j({ok:1})}
+  regs['r'+ip]=(regs['r'+ip]||0)+1;if(regs['r'+ip]>200)return j({e:'limit'},429);
+  const key=/^[0-9A-F]{8}$/.test(kk)?kk:crypto.randomBytes(4).toString('hex').toUpperCase(),n=String(b.name||'').replace(/[<>&"'`]/g,'').trim().slice(0,20);
+  db.players[id]={name:n.length<2?'Player':n,c:/^[A-Z]{2}$/.test(b.country)?b.country:'',t:now,kh:sha(key),rk:key,ref:'',re:1};save();return j({ok:1,key,created:1})}
  if(p=='restore'){cl[ip]=(cl[ip]||0)+1;if(cl[ip]>10)return j({e:'limit'},429);const id=String(b.id||'').trim().toUpperCase(),P=db.players[id];
   if(!P||!P.kh||sha(String(b.key||'').trim().toUpperCase())!==P.kh)return j({e:'bad'},400);return j({id,name:P.name,country:P.c})}
  if(p=='start'){if(!db.players[b.id])return j({e:'player'},400);if(!(b.game in RATE))return j({e:'bad'},400);const sid=crypto.randomBytes(8).toString('hex');sess[sid]={id:b.id,g:b.game,t:now,score:0,lives:3,level:1,asked:0,right:0,idle:0,seen:[]};return j({sid})}
@@ -54,12 +59,13 @@ function api(u,b,ip,j){const p=u.pathname.slice(5),now=Date.now();
  if(p=='lb'){const q=u.searchParams,P=['d','w','m'].includes(q.get('p'))?q.get('p'):'d';return j(board(P,Math.min(+q.get('off')||0,1),P=='d'?10:20))}
  if(p=='winners')return j({lw:board('w',1,3),rw:refboard(1,3)});
  if(p=='refboard'){const q=u.searchParams,off=Math.min(+q.get('off')||0,1),me=q.get('id');const K=k(now,'w')-off;return j({rows:refboard(off,10),me:db.refs.filter(x=>x.by==me&&k(x.t,'w')==K).length})}
- if(p=='claim'||p=='support'){const id=String(b.id||'').trim().toUpperCase(),P=db.players[id];if(!P)return j({e:'id'},400);if(p=='support'&&db.msgs.filter(x=>x.id==id&&x.p=='support'&&now-x.t<36e5).length>=30)return j({ok:1,sent:true,n:0});// silent spam guard, no error shown
+ if(p=='claim'||p=='support'){const id=String(b.id||'').trim().toUpperCase().slice(0,20),P=db.players[id]||{name:String(b.nm||'(unknown)').slice(0,30),c:String(b.cc||'').slice(0,2).toUpperCase(),unk:1};if(id.length<3)return j({e:'id'},400);// a message is never blocked just because the server lost the player record
+  if(p=='support'&&db.msgs.filter(x=>x.id==id&&x.p=='support'&&now-x.t<36e5).length>=30)return j({ok:1,sent:true,n:0});// silent spam guard, no error shown
   const em=String(b.email||'').trim().slice(0,100);if(!/^\S+@\S+\.\S+$/.test(em))return j({e:'email'},400);
   const ist=new Date(now+19800000).toISOString().replace('T',' ').slice(0,16)+' IST';let sub,body;
   if(p=='claim'){const w=String(b.wallet||'').trim();if(!/^0x[a-fA-F0-9]{40}$/.test(w))return j({e:'wallet'},400);const ty=['weekly','invite'].includes(b.type)?b.type:'weekly',wk=k(now,'w'),dup=db.msgs.find(x=>x.p=='claim'&&k(x.t,'w')==wk&&(x.id==id||String(x.w).toLowerCase()==w.toLowerCase()||String(x.em).toLowerCase()==em.toLowerCase()));
    if(dup)return j({e:'weekly',n:dup.n},400);
-   const lw=board('w',1,3,1).find(x=>x.id==id),li=refboard(1,3,1).find(x=>x.id==id),el=lw?'Game top '+lw.r+' (last week)':li?'Invite top '+li.r+' (last week)':'NOT in last week top 3';
+   const lw=board('w',1,3,1).find(x=>x.id==id),li=refboard(1,3,1).find(x=>x.id==id),el=lw?'Game top '+lw.r+' (last week)':li?'Invite top '+li.r+' (last week)':'NOT in last week top 3'+(P.unk?' | ⚠ Player ID not found on server (data reset?)':'');
    sub='SquardGames Prize Claim - '+id;body='Prize type: '+ty+'\nPlayer ID: '+id+'\nName: '+P.name+'\nCountry: '+P.c+'\nWallet (BNB BEP20): '+w+'\nEmail: '+em+'\nTime: '+ist;db.msgs.push({n:db.cn=(db.cn||0)+1,t:now,p,id,nm:P.name,cc:P.c,ty,w,em,el,st:'pending',note:'',tx:''})}
   else{const m=String(b.msg||'').trim().slice(0,1000);if(m.length<3)return j({e:'msg'},400);sub='SquardGames Support - '+id;body='Player ID: '+id+'\nName: '+P.name+'\nCountry: '+P.c+'\nEmail: '+em+'\nTime: '+ist+'\n\n'+m;db.msgs.push({n:db.cn=(db.cn||0)+1,t:now,p,id,nm:P.name,cc:P.c,em,m,st:'new',note:'',tx:''})}
   P.em=em;if(db.msgs.length>5000)db.msgs.shift();save();const nn=db.cn;mail(sub,body,em).catch(()=>{});return j({ok:1,sent:true,n:nn})}   // e-mail goes out in the background, player gets an instant reply
