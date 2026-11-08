@@ -32,7 +32,7 @@ function api(u,b,ip,j){const p=u.pathname.slice(5),now=Date.now();
  if(p=='register'){const n=String(b.name||'').replace(/[<>&"'`]/g,'').trim().slice(0,20);if(n.length<2)return j({e:'name'},400);
   regs[ip]=(regs[ip]||0)+1;if(regs[ip]>5)return j({e:'limit'},429);
   const c=/^[A-Z]{2}$/.test(b.country)?b.country:'',id='SQ-'+crypto.randomBytes(3).toString('hex').toUpperCase();
-  const key=crypto.randomBytes(4).toString('hex').toUpperCase();db.players[id]={name:n,c,t:now,kh:sha(key),ref:(b.ref&&db.players[b.ref]&&b.ref!=id&&regs[ip]<=2)?b.ref:''};
+  const key=crypto.randomBytes(4).toString('hex').toUpperCase(),rf=String(b.ref||'').trim().toUpperCase();db.players[id]={name:n,c,t:now,kh:sha(key),rk:key,ref:(rf&&db.players[rf]&&rf!=id&&regs[ip]<=2)?rf:''};
   save();return j({id,name:n,country:c,key})}
  if(p=='restore'){cl[ip]=(cl[ip]||0)+1;if(cl[ip]>10)return j({e:'limit'},429);const id=String(b.id||'').trim().toUpperCase(),P=db.players[id];
   if(!P||!P.kh||sha(String(b.key||'').trim().toUpperCase())!==P.kh)return j({e:'bad'},400);return j({id,name:P.name,country:P.c})}
@@ -54,17 +54,23 @@ function api(u,b,ip,j){const p=u.pathname.slice(5),now=Date.now();
  if(p=='lb'){const q=u.searchParams,P=['d','w','m'].includes(q.get('p'))?q.get('p'):'d';return j(board(P,Math.min(+q.get('off')||0,1),P=='d'?10:20))}
  if(p=='winners')return j({lw:board('w',1,3),rw:refboard(1,3)});
  if(p=='refboard'){const q=u.searchParams,off=Math.min(+q.get('off')||0,1),me=q.get('id');const K=k(now,'w')-off;return j({rows:refboard(off,10),me:db.refs.filter(x=>x.by==me&&k(x.t,'w')==K).length})}
- if(p=='claim'||p=='support'){const id=String(b.id||'').trim().toUpperCase(),P=db.players[id];if(!P)return j({e:'id'},400);cl[ip]=(cl[ip]||0)+1;if(cl[ip]>6)return j({e:'limit'},429);
+ if(p=='claim'||p=='support'){const id=String(b.id||'').trim().toUpperCase(),P=db.players[id];if(!P)return j({e:'id'},400);if(p=='support'&&db.msgs.filter(x=>x.id==id&&x.p=='support'&&now-x.t<36e5).length>=30)return j({ok:1,sent:true,n:0});// silent spam guard, no error shown
   const em=String(b.email||'').trim().slice(0,100);if(!/^\S+@\S+\.\S+$/.test(em))return j({e:'email'},400);
   const ist=new Date(now+19800000).toISOString().replace('T',' ').slice(0,16)+' IST';let sub,body;
-  if(p=='claim'){const w=String(b.wallet||'').trim();if(!/^0x[a-fA-F0-9]{40}$/.test(w))return j({e:'wallet'},400);const ty=['weekly','invite'].includes(b.type)?b.type:'weekly';
-   sub='SquardGames Prize Claim - '+id;body='Prize type: '+ty+'\nPlayer ID: '+id+'\nName: '+P.name+'\nCountry: '+P.c+'\nWallet (BNB BEP20): '+w+'\nEmail: '+em+'\nTime: '+ist;db.msgs.push({n:db.cn=(db.cn||0)+1,t:now,p,id,nm:P.name,cc:P.c,ty,w,em,st:'pending',note:'',tx:''})}
+  if(p=='claim'){const w=String(b.wallet||'').trim();if(!/^0x[a-fA-F0-9]{40}$/.test(w))return j({e:'wallet'},400);const ty=['weekly','invite'].includes(b.type)?b.type:'weekly',wk=k(now,'w'),dup=db.msgs.find(x=>x.p=='claim'&&k(x.t,'w')==wk&&(x.id==id||String(x.w).toLowerCase()==w.toLowerCase()||String(x.em).toLowerCase()==em.toLowerCase()));
+   if(dup)return j({e:'weekly',n:dup.n},400);
+   const lw=board('w',1,3,1).find(x=>x.id==id),li=refboard(1,3,1).find(x=>x.id==id),el=lw?'Game top '+lw.r+' (last week)':li?'Invite top '+li.r+' (last week)':'NOT in last week top 3';
+   sub='SquardGames Prize Claim - '+id;body='Prize type: '+ty+'\nPlayer ID: '+id+'\nName: '+P.name+'\nCountry: '+P.c+'\nWallet (BNB BEP20): '+w+'\nEmail: '+em+'\nTime: '+ist;db.msgs.push({n:db.cn=(db.cn||0)+1,t:now,p,id,nm:P.name,cc:P.c,ty,w,em,el,st:'pending',note:'',tx:''})}
   else{const m=String(b.msg||'').trim().slice(0,1000);if(m.length<3)return j({e:'msg'},400);sub='SquardGames Support - '+id;body='Player ID: '+id+'\nName: '+P.name+'\nCountry: '+P.c+'\nEmail: '+em+'\nTime: '+ist+'\n\n'+m;db.msgs.push({n:db.cn=(db.cn||0)+1,t:now,p,id,nm:P.name,cc:P.c,em,m,st:'new',note:'',tx:''})}
-  if(db.msgs.length>5000)db.msgs.shift();save();const nn=db.cn;mail(sub,body,em).then(ok=>j({ok:1,sent:ok,n:nn}));return}
+  P.em=em;if(db.msgs.length>5000)db.msgs.shift();save();const nn=db.cn;mail(sub,body,em).catch(()=>{});return j({ok:1,sent:true,n:nn})}   // e-mail goes out in the background, player gets an instant reply
  if(p=='myclaims'){const id=String(u.searchParams.get('id')||'').toUpperCase();return j(db.msgs.filter(x=>x.id==id&&x.p=='claim').map(x=>({n:x.n,t:x.t,ty:x.ty,st:x.st,note:x.note,tx:x.tx})).reverse())}
  if(p.startsWith('admin/')){const K=process.env.ADMIN_KEY;adm[ip]=adm[ip]||0;if(!K||adm[ip]>=10||String(b.key||'')!==K){if(K)adm[ip]++;return j({e:'no'},403)}
   if(p=='admin/list')return j({claims:db.msgs.filter(x=>x.p=='claim').reverse(),support:db.msgs.filter(x=>x.p=='support').reverse(),players:Object.keys(db.players).length,lw:board('w',1,3,1),cw:board('w',0,3,1),lr:refboard(1,3,1),cr:refboard(0,3,1)});
   if(p=='admin/set'){const x=db.msgs.find(z=>z.n==b.n);if(!x)return j({e:'n'},404);if(['pending','approved','paid','rejected','new','done'].includes(b.st))x.st=b.st;x.note=String(b.note||'').slice(0,300);x.tx=String(b.tx||'').slice(0,120);save();return j({ok:1})}
+  if(p=='admin/players'){const q=String(b.q||'').trim().toLowerCase();let dn;try{dn=new Intl.DisplayNames(['en'],{type:'region'})}catch{}
+   const rows=Object.entries(db.players).map(([id,P])=>{const ms=db.msgs.filter(x=>x.id==id);return{id,name:P.name,c:P.c||'',cn:(dn&&P.c&&dn.of(P.c))||'',t:P.t,rk:P.rk||'',ems:[...new Set([P.em,...ms.map(x=>x.em)].filter(Boolean))],ws:[...new Set(ms.filter(x=>x.w).map(x=>x.w))],claims:ms.filter(x=>x.p=='claim').length}});
+   const hit=rows.filter(r=>!q||[r.id,r.name,r.c,r.cn,...r.ems,...r.ws].join(' ').toLowerCase().includes(q)).sort((a,b)=>b.t-a.t).slice(0,60);return j({rows:hit,total:rows.length})}
+  if(p=='admin/resetkey'){const id=String(b.id||'').toUpperCase(),P=db.players[id];if(!P)return j({e:'id'},404);const key=crypto.randomBytes(4).toString('hex').toUpperCase();P.kh=sha(key);P.rk=key;save();return j({ok:1,key})}
   return j({e:'404'},404)}
  j({e:'404'},404)}
 const ORIGINS=(process.env.ALLOWED_ORIGINS||'https://squardgames.web.app,https://squardgames.firebaseapp.com').split(',').map(s=>s.trim());// website(s) allowed to call this API from another domain (Firebase Hosting)

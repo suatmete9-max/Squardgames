@@ -6,6 +6,7 @@ input,select,button,textarea{font:inherit;padding:5px;border-radius:6px;border:1
 <div id=ad hidden>
 <p id=sum></p><button onclick=load()>↻ Refresh</button>
 <h2>🏆 Winners (copy Player IDs to match claims)</h2><div class=box id=win></div>
+<h2>🔎 Find a player (ID / name / country / email / wallet) - gives Player ID + Recovery key</h2><input id=q style=width:min(420px,70%) placeholder="type anything, then Enter" onkeydown="event.key=='Enter'&&ps()"> <button onclick=ps()>Search</button><div class=box id=pl></div>
 <h2>💰 Prize claims</h2><div class=box id=cl></div>
 <h2>🎧 Support messages</h2><div class=box id=su></div></div>
 <script src=config.js></script><script>
@@ -16,10 +17,12 @@ const bt=(t,rows)=>'<b>'+t+'</b><table><tr><th>#</th><th>Player ID</th><th>Name<
 async function load(){const r=await P('admin/list',{});if(r.e){$('#lg').hidden=false;$('#ad').hidden=true;alert(r.e=='net'?'Server not reachable (wait 1 min, Render is waking up)':'Wrong key');return}
  $('#lg').hidden=true;$('#ad').hidden=false;$('#sum').textContent='Players: '+r.players+' · Claims: '+r.claims.length+' · Support: '+r.support.length;
  $('#win').innerHTML=bt('Last week - game top 3',r.lw)+bt('This week - game top 3 (so far)',r.cw)+bt('Last week - invite top 3',r.lr)+bt('This week - invite top 3 (so far)',r.cr);
- const row=(x,sts,claim)=>'<tr class="st-'+x.st+'"><td>#'+x.n+'<br>'+ist(x.t)+'</td><td>'+esc(x.id)+'<br>'+esc(x.nm)+' ('+esc(x.cc)+')</td><td class=w>'+(claim?esc(x.ty)+'<br><b>'+esc(x.w)+'</b> <button onclick="navigator.clipboard.writeText(\''+esc(x.w)+'\')">Copy</button>':esc(x.m))+'<br><a style=color:#ffe14d href="mailto:'+esc(x.em)+'">'+esc(x.em)+'</a></td><td><select id=s'+x.n+'>'+sts.map(s=>'<option'+(s==x.st?' selected':'')+'>'+s+'</option>').join('')+'</select></td><td><input id=n'+x.n+' value="'+esc(x.note)+'" placeholder="note to player"><br><input id=t'+x.n+' value="'+esc(x.tx)+'" placeholder="TX hash"></td><td><button onclick=sv('+x.n+')>Save</button></td></tr>';
+ const row=(x,sts,claim)=>'<tr class="st-'+x.st+'"><td>#'+x.n+'<br>'+ist(x.t)+'</td><td>'+esc(x.id)+'<br>'+esc(x.nm)+' ('+esc(x.cc)+')</td><td class=w>'+(claim?esc(x.ty)+' · <i>'+esc(x.el||'')+'</i><br><b>'+esc(x.w)+'</b> <button onclick="navigator.clipboard.writeText(\''+esc(x.w)+'\')">Copy</button>':esc(x.m))+'<br><a style=color:#ffe14d href="mailto:'+esc(x.em)+'">'+esc(x.em)+'</a></td><td><select id=s'+x.n+'>'+sts.map(s=>'<option'+(s==x.st?' selected':'')+'>'+s+'</option>').join('')+'</select></td><td><input id=n'+x.n+' value="'+esc(x.note)+'" placeholder="note to player"><br><input id=t'+x.n+' value="'+esc(x.tx)+'" placeholder="TX hash"></td><td><button onclick=sv('+x.n+')>Save</button></td></tr>';
  const th='<tr><th>No / Time</th><th>Player</th><th>Details</th><th>Status</th><th>Note / TX</th><th></th></tr>';
  $('#cl').innerHTML='<table>'+th+r.claims.map(x=>row(x,['pending','approved','paid','rejected'],1)).join('')+'</table>';
- $('#su').innerHTML='<table>'+th+r.support.map(x=>row(x,['new','done'],0)).join('')+'</table>'}
+ ps();$('#su').innerHTML='<table>'+th+r.support.map(x=>row(x,['new','done'],0)).join('')+'</table>'}
+async function ps(){const r=await P('admin/players',{q:$('#q').value});if(r.e)return;$('#pl').innerHTML='<p>'+r.total+' players total, showing '+r.rows.length+'</p><table><tr><th>Player ID</th><th>Name / Country</th><th>Joined</th><th>Recovery key</th><th>Emails / Wallets</th><th>Claims</th><th></th></tr>'+r.rows.map(x=>'<tr><td>'+esc(x.id)+'</td><td>'+esc(x.name)+'<br>'+esc(x.c)+' '+esc(x.cn)+'</td><td>'+ist(x.t)+'</td><td><b>'+(x.rk?esc(x.rk):'(old account - press Reset)')+'</b></td><td class=w>'+x.ems.map(esc).join('<br>')+'<br>'+x.ws.map(esc).join('<br>')+'</td><td>'+x.claims+'</td><td><button onclick="rk(\''+esc(x.id)+'\')">Reset key</button></td></tr>').join('')+'</table>'}
+async function rk(id){if(!confirm('Create a NEW recovery key for '+id+'? The old key stops working.'))return;const r=await P('admin/resetkey',{id});alert(r.key?'New key for '+id+': '+r.key:'Error');ps()}
 async function sv(n){const r=await P('admin/set',{n,st:$('#s'+n).value,note:$('#n'+n).value,tx:$('#t'+n).value});alert(r.ok?'Saved':'Error');load()}
 if(K)load();
 </script>
