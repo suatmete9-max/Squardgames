@@ -1,28 +1,53 @@
-<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content=noindex><title>SquardGames Admin</title>
-<style>body{font-family:"Segoe UI",Arial;background:#0b0630;color:#fff;margin:0;padding:12px}table{width:100%;border-collapse:collapse;font-size:13px}td,th{border:1px solid #4a3a9a;padding:5px;vertical-align:top}th{background:#2a1a6e}
-input,select,button,textarea{font:inherit;padding:5px;border-radius:6px;border:1px solid #7c4dff;background:#1d1150;color:#fff}h2{color:#ffe14d}.w{max-width:230px;word-break:break-all}.box{overflow:auto;margin-bottom:22px}.st-pending{background:#4d3b00}.st-paid{background:#0b3d1b}.st-rejected{background:#4a0d0d}.st-approved{background:#0b2d4d}</style>
-<h1>SquardGames Admin</h1>
-<div id=lg><input id=k type=password placeholder="Admin key"> <button onclick="K=$('#k').value;sessionStorage.k=K;load()">Login</button></div>
+<!doctype html><html><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content=noindex><title>SquardGames Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Orbitron:wght@700&display=swap" rel=stylesheet><link rel=stylesheet href=style.css>
+<style>
+.wrap{max-width:1200px;width:100%;margin:auto;padding:8px 10px 40px}
+.panel{margin:16px 0;padding:14px 12px;border-radius:20px;border:3px solid var(--c,#7c4dff);background:linear-gradient(#150a45ee,#0b0630ee);box-shadow:0 0 22px var(--c,#7c4dff)}
+.panel h2{margin:0 0 10px;font:italic 800 clamp(18px,4.5vw,26px) Fredoka}
+.chips{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}.chip{min-width:130px;text-align:center;padding:10px 14px;border-radius:16px;border:2px solid #ffb300;background:#1a0f40;box-shadow:0 0 14px #ff910088}.chip b{display:block;font:italic 800 28px Fredoka;color:#ffe14d}
+.sc{overflow:auto;border-radius:14px;border:2px solid #5c35c9}table.at{width:100%;border-collapse:collapse;font-size:14px;min-width:760px}.at th{background:#2a1a6e;padding:9px 8px;text-align:left;white-space:nowrap}.at td{padding:8px;border-top:1px solid #fff2;vertical-align:top}
+.at tr.st-pending td{background:#4d3b0033}.at tr.st-paid td{background:#0b3d1b44}.at tr.st-rejected td{background:#4a0d0d44}.at tr.st-approved td{background:#0b2d4d44}
+.at input,.at select,.panel>input,#lgbox input{background:#10083a;color:#fff;border:1px solid #7c4dff;border-radius:10px;padding:7px 9px;font:inherit}.at input{width:100%;margin-bottom:4px}.at input.amt{width:84px}
+.w{max-width:260px;word-break:break-all}.sb{display:inline-block;padding:2px 10px;border-radius:12px;font-weight:700;font-size:12px;background:#4d3b00}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.cols table{width:100%;border-collapse:collapse;font-size:14px}.cols td,.cols th{padding:6px;border-bottom:1px solid #fff2;text-align:left}
+#lgbox{max-width:380px;margin:40px auto;text-align:center}#lgbox input{width:100%;margin:10px 0}
+button.mini{padding:5px 10px;font-size:13px;border-radius:10px}button.ok{background:linear-gradient(#17c964,#0a8f43);border-color:#7dffb0}
+</style></head><body>
+<header><div class=brand><span class=gp>🎮</span><div class=lg2><b class=logo><span>Squard</span><em>Games</em></b><div class=tg>Admin Panel</div></div><div class=shield><i>ADMIN<br>ONLY</i></div></div>
+<nav><button class=nb onclick="location.href='/'">🏠 Site</button><button class=nb onclick=load()>↻ Refresh</button><span class=pill id=sum>offline</span></nav></header>
+<div class=wrap>
+<div id=lgbox class="panel"><h2>🔐 Admin login</h2><input id=k type=password placeholder="Admin key" onkeydown="event.key=='Enter'&&login()"><button class=big onclick=login()>Login</button></div>
 <div id=ad hidden>
-<p id=sum></p><button onclick=load()>↻ Refresh</button>
-<h2>🏆 Winners (copy Player IDs to match claims)</h2><div class=box id=win></div>
-<h2>🔎 Find a player (ID / name / country / email / wallet) - gives Player ID + Recovery key</h2><input id=q style=width:min(420px,70%) placeholder="type anything, then Enter" onkeydown="event.key=='Enter'&&ps()"> <button onclick=ps()>Search</button><div class=box id=pl></div>
-<h2>💰 Prize claims</h2><div class=box id=cl></div>
-<h2>🎧 Support messages</h2><div class=box id=su></div></div>
+ <div class="panel chips" style="--c:#ffb300" id=chips></div>
+ <div class=panel style="--c:#2f9bff"><h2>🏆 Winners - copy Player ID to match a claim</h2><div class=cols id=win></div></div>
+ <div class=panel style="--c:#a24dff"><h2>🔎 Find a player (ID / name / country / email / wallet)</h2><input id=q style="width:min(460px,100%)" placeholder="type anything, press Enter" onkeydown="event.key=='Enter'&&ps()"> <button class=big onclick=ps()>Search</button><div class=sc style="margin-top:10px"><div id=pl></div></div></div>
+ <div class=panel style="--c:#ff9100"><h2>💰 Prize claims <small style="font-size:13px;opacity:.8">- set <b>paid</b> and the player appears in the public "Paid Winners" list</small></h2><div class=sc id=cl></div></div>
+ <div class=panel style="--c:#17c964"><h2>💸 Public "Paid Winners" list (what players see)</h2><div class=sc id=pw></div></div>
+ <div class=panel style="--c:#ff2d95"><h2>🎧 Support messages</h2><div class=sc id=su></div></div>
+</div></div>
 <script src=config.js></script><script>
 const API=(window.SQ_API||'')+'/api/',$=s=>document.querySelector(s);let K=sessionStorage.k||'';
-const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt()+';'),ist=t=>new Date(t+19800000).toISOString().replace('T',' ').slice(0,16)+' IST';
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt()+';'),ist=t=>new Date(t+19800000).toISOString().replace('T',' ').slice(0,16)+' IST',fl=c=>c&&/^[A-Za-z]{2}$/.test(c)?'<img class=fg src="https://flagcdn.com/w40/'+c.toLowerCase()+'.png"> ':'';
 const P=(u,d)=>fetch(API+u,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:K,...d})}).then(r=>r.json()).catch(()=>({e:'net'}));
-const bt=(t,rows)=>'<b>'+t+'</b><table><tr><th>#</th><th>Player ID</th><th>Name</th><th>Score/Invites</th></tr>'+(rows.length?rows.map(r=>'<tr><td>'+r.r+'</td><td>'+esc(r.id)+'</td><td>'+esc(r.n)+' ('+esc(r.c)+')</td><td>'+r.s+'</td></tr>').join(''):'<tr><td colspan=4>-</td></tr>')+'</table><br>';
-async function load(){const r=await P('admin/list',{});if(r.e){$('#lg').hidden=false;$('#ad').hidden=true;alert(r.e=='net'?'Server not reachable (wait 1 min, Render is waking up)':'Wrong key');return}
- $('#lg').hidden=true;$('#ad').hidden=false;$('#sum').textContent='Players: '+r.players+' · Claims: '+r.claims.length+' · Support: '+r.support.length;
- $('#win').innerHTML=bt('Last week - game top 3',r.lw)+bt('This week - game top 3 (so far)',r.cw)+bt('Last week - invite top 3',r.lr)+bt('This week - invite top 3 (so far)',r.cr);
- const row=(x,sts,claim)=>'<tr class="st-'+x.st+'"><td>#'+x.n+'<br>'+ist(x.t)+'</td><td>'+esc(x.id)+'<br>'+esc(x.nm)+' ('+esc(x.cc)+')</td><td class=w>'+(claim?esc(x.ty)+' · <i>'+esc(x.el||'')+'</i><br><b>'+esc(x.w)+'</b> <button onclick="navigator.clipboard.writeText(\''+esc(x.w)+'\')">Copy</button>':esc(x.m))+'<br><a style=color:#ffe14d href="mailto:'+esc(x.em)+'">'+esc(x.em)+'</a></td><td><select id=s'+x.n+'>'+sts.map(s=>'<option'+(s==x.st?' selected':'')+'>'+s+'</option>').join('')+'</select></td><td><input id=n'+x.n+' value="'+esc(x.note)+'" placeholder="note to player"><br><input id=t'+x.n+' value="'+esc(x.tx)+'" placeholder="TX hash"></td><td><button onclick=sv('+x.n+')>Save</button></td></tr>';
- const th='<tr><th>No / Time</th><th>Player</th><th>Details</th><th>Status</th><th>Note / TX</th><th></th></tr>';
- $('#cl').innerHTML='<table>'+th+r.claims.map(x=>row(x,['pending','approved','paid','rejected'],1)).join('')+'</table>';
- ps();$('#su').innerHTML='<table>'+th+r.support.map(x=>row(x,['new','done'],0)).join('')+'</table>'}
-async function ps(){const r=await P('admin/players',{q:$('#q').value});if(r.e)return;$('#pl').innerHTML='<p>'+r.total+' players total, showing '+r.rows.length+'</p><table><tr><th>Player ID</th><th>Name / Country</th><th>Joined</th><th>Recovery key</th><th>Emails / Wallets</th><th>Claims</th><th></th></tr>'+r.rows.map(x=>'<tr><td>'+esc(x.id)+'</td><td>'+esc(x.name)+'<br>'+esc(x.c)+' '+esc(x.cn)+'</td><td>'+ist(x.t)+'</td><td><b>'+(x.rk?esc(x.rk):'(old account - press Reset)')+'</b></td><td class=w>'+x.ems.map(esc).join('<br>')+'<br>'+x.ws.map(esc).join('<br>')+'</td><td>'+x.claims+'</td><td><button onclick="rk(\''+esc(x.id)+'\')">Reset key</button></td></tr>').join('')+'</table>'}
-async function rk(id){if(!confirm('Create a NEW recovery key for '+id+'? The old key stops working.'))return;const r=await P('admin/resetkey',{id});alert(r.key?'New key for '+id+': '+r.key:'Error');ps()}
-async function sv(n){const r=await P('admin/set',{n,st:$('#s'+n).value,note:$('#n'+n).value,tx:$('#t'+n).value});alert(r.ok?'Saved':'Error');load()}
+const toast=m=>{const t=document.createElement('div');t.id='rw';t.textContent=m;document.body.append(t);setTimeout(()=>t.remove(),2500)};
+function login(){K=$('#k').value;sessionStorage.k=K;load()}
+const bt=(t,rows)=>'<div><b>'+t+'</b><table><tr><th>#</th><th>Player ID</th><th>Name</th><th>Pts</th></tr>'+(rows.length?rows.map(r=>'<tr><td>'+r.r+'</td><td>'+esc(r.id)+'</td><td>'+fl(r.c)+esc(r.n)+'</td><td>'+r.s+'</td></tr>').join(''):'<tr><td colspan=4>-</td></tr>')+'</table></div>';
+async function load(){const r=await P('admin/list',{});
+ if(r.e){$('#lgbox').hidden=false;$('#ad').hidden=true;if(K)toast(r.e=='net'?'Server not reachable (Render may be waking up, wait 1 min)':r.e=='starting'?'Server is starting, wait a moment':'Wrong key');return}
+ $('#lgbox').hidden=true;$('#ad').hidden=false;const pend=r.claims.filter(x=>x.st=='pending').length,paid=r.claims.filter(x=>x.st=='paid');
+ $('#sum').textContent='● online';
+ $('#chips').innerHTML=[['Players',r.players],['Pending claims',pend],['Paid',paid.length],['Paid total $',paid.reduce((a,x)=>a+(+x.amt||0),0)],['Support',r.support.filter(x=>x.st=='new').length]].map(a=>'<div class=chip><b>'+a[1]+'</b>'+a[0]+'</div>').join('');
+ const pz=r.prizes||{game:[],invite:[]};
+ $('#win').innerHTML=bt('Last week - game top 3 (prize $'+pz.game.join(' / $')+')',r.lw)+bt('This week - game so far',r.cw)+bt('Last week - invites top 3 (prize $'+pz.invite.join(' / $')+')',r.lr)+bt('This week - invites so far',r.cr);
+ const th='<table class=at><tr><th>No / Time</th><th>Player</th><th>Details</th><th>Status</th><th>$</th><th>Note / TX</th><th></th></tr>';
+ const row=(x,sts,claim)=>'<tr class="st-'+x.st+'"><td>#'+x.n+'<br><small>'+ist(x.t)+'</small></td><td>'+esc(x.id)+'<br>'+fl(x.cc)+esc(x.nm)+'</td><td class=w>'+(claim?esc(x.ty)+' · <i>'+esc(x.el||'')+'</i><br><b>'+esc(x.w)+'</b> <button class=mini onclick="navigator.clipboard.writeText(\''+esc(x.w)+'\');toast(\'Copied\')">Copy</button>':esc(x.m))+'<br><a style=color:#ffe14d href="mailto:'+esc(x.em)+'">'+esc(x.em)+'</a></td><td><select id=s'+x.n+'>'+sts.map(s=>'<option'+(s==x.st?' selected':'')+'>'+s+'</option>').join('')+'</select></td><td>'+(claim?'<input class=amt id=a'+x.n+' type=number min=0 value="'+(x.amt||0)+'">':'')+'</td><td><input id=n'+x.n+' value="'+esc(x.note)+'" placeholder="note to player"><input id=t'+x.n+' value="'+esc(x.tx)+'" placeholder="TX hash"></td><td><button class="mini big" onclick=sv('+x.n+')>Save</button>'+(claim&&x.st!='paid'?'<br><br><button class="mini ok" onclick=paid('+x.n+')>✅ Mark PAID</button>':'')+'</td></tr>';
+ $('#cl').innerHTML=th+r.claims.map(x=>row(x,['pending','approved','paid','rejected'],1)).join('')+'</table>';
+ $('#su').innerHTML=th+r.support.map(x=>row(x,['new','done'],0)).join('')+'</table>';
+ $('#pw').innerHTML='<table class=at style="min-width:0"><tr><th>Winner</th><th>Amount</th><th>Date</th></tr>'+(paid.length?paid.sort((a,b)=>(b.paidAt||b.t)-(a.paidAt||a.t)).map(x=>'<tr><td>'+fl(x.cc)+esc(x.nm)+'</td><td><b style=color:#ffe14d>$'+(x.amt||0)+'</b></td><td>'+ist(x.paidAt||x.t).slice(0,10)+'</td></tr>').join(''):'<tr><td colspan=3>Nobody paid yet</td></tr>')+'</table>';
+ ps()}
+async function sv(n,st){const r=await P('admin/set',{n,st:st||$('#s'+n).value,note:$('#n'+n).value,tx:$('#t'+n).value,amt:$('#a'+n)?$('#a'+n).value:''});toast(r.ok?'✅ Saved':'Error');load()}
+function paid(n){if(!+$('#a'+n).value&&!confirm('Amount is $0. Mark as paid anyway?'))return;sv(n,'paid')}
+async function ps(){const r=await P('admin/players',{q:$('#q').value});if(r.e)return;$('#pl').innerHTML='<p style="padding:0 8px">'+r.total+' players total, showing '+r.rows.length+'</p><table class=at><tr><th>Player ID</th><th>Name / Country</th><th>Joined</th><th>Recovery key</th><th>Emails / Wallets</th><th>Claims</th><th></th></tr>'+r.rows.map(x=>'<tr><td>'+esc(x.id)+'</td><td>'+fl(x.c)+esc(x.name)+'<br><small>'+esc(x.cn)+'</small></td><td><small>'+ist(x.t)+'</small></td><td><b>'+(x.rk?esc(x.rk):'(old account - press Reset)')+'</b></td><td class=w>'+x.ems.map(esc).join('<br>')+'<br>'+x.ws.map(esc).join('<br>')+'</td><td>'+x.claims+'</td><td><button class=mini onclick="rk(\''+esc(x.id)+'\')">Reset key</button></td></tr>').join('')+'</table>'}
+async function rk(id){if(!confirm('Create a NEW recovery key for '+id+'? The old key stops working.'))return;const r=await P('admin/resetkey',{id});if(r.key)alert('New key for '+id+': '+r.key);else toast('Error');ps()}
 if(K)load();
-</script>
+</script></body></html>

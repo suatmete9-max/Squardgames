@@ -13,6 +13,7 @@ const ADS={hold:false,VIDEO_SRC:'',   // VIDEO_SRC: optional direct video file U
   iv=setInterval(()=>{c--;if(c>0)b.textContent=c;else{clearInterval(iv);b.textContent='✕';b.disabled=false}},1000);ft=setTimeout(done,(secs+25)*1000);b.onclick=done})},
  full(){if(Math.random()<.5){ADS.vig();return Promise.resolve()}return ADS.ov(3)},   // random: Monetag vignette or Adsterra overlay
  vbreak(){return ADS.ov(10,ADS.VIDEO_SRC)},                                          // timed 10-second break
+ ban2:id=>{if(window.SQApp)return;const e=document.getElementById(id);e&&ADS.banner(e)},   // extra banner in a free area (website only, never in the Android app)
  level:n=>n%2==0?ADS.full():Promise.resolve(),
  lvQuiz:()=>ADS.full(),
  init(){ADS.banner(document.getElementById('adT'));ADS.banner(document.getElementById('adB'))}};
