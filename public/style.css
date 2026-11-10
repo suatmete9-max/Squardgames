@@ -100,3 +100,6 @@ nav{display:grid!important;grid-template-columns:repeat(4,auto);gap:6px!importan
 
 .trb{margin:12px 0;padding:12px 14px;border-radius:16px;background:linear-gradient(#2a1458,#150a3a);border:2px solid #ff9100;box-shadow:0 0 16px #ff910066}
 .trb h3{margin:0 0 8px;color:#ffd23f}.trb ol{margin:0;padding-left:24px}.trb li{margin:5px 0}.trb li a{color:#fff;text-decoration:none;font-weight:700}.trb li small{opacity:.7;margin-left:8px;color:#5dff7a}.trm{display:block;text-align:center;margin-top:8px;color:#ffe14d;font-weight:700}
+
+#ft{max-width:900px;width:100%;margin:10px auto 0;padding:14px 12px 20px;text-align:center;font-size:13px;color:#cfc6ff;border-top:1px solid #ffffff22}
+#ft p{margin:6px 0}#ft .ab{opacity:.75;line-height:1.5}#ft a{color:#ffe14d}#ft nav{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;margin:8px 0}

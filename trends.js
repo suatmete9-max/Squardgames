@@ -9,7 +9,9 @@
 // Env (all optional): PUBLIC_URL, SITE_URL, TRENDS_EVERY_HOURS (default 3), DATA_DIR, TRENDS_BASE
 const fs = require('fs'), path = require('path');
 
-const GEOS = 'US IN GB BR ID JP DE FR MX CA AU IT ES TR RU KR PH PK BD EG NG ZA SA AE TH VN MY SG AR CO PL NL'.split(' ');
+const GEOS = 'US IN GB BR ID JP DE FR MX CA AU IT ES TR RU KR PH PK BD EG NG ZA SA AE TH VN MY SG AR CO PL NL SE NO DK CH IE NZ AT BE FI HK'.split(' ');
+// Tier-1 (high ad-value) countries count 3x when ranking, so their searches rise to the top of the worldwide list
+const T1 = new Set('US GB CA AU DE FR NL SE NO DK CH IE NZ AT BE FI JP KR SG AE IT ES HK'.split(' ')), W1 = +process.env.TIER1_WEIGHT || 3;
 const EVERY = (+process.env.TRENDS_EVERY_HOURS || 3) * 36e5;
 const FILE = path.join(process.env.DATA_DIR || __dirname, 'trends.json');
 const GBASE = (process.env.TRENDS_BASE || 'https://trends.google.com').replace(/\/$/, '');
@@ -84,8 +86,8 @@ async function refresh() {
         geos[cc] = items.slice(0, 20).map(x => ({ k: x.k, slug: slugify(x.k), t: x.t })).filter(x => x.slug);
         items.forEach(it => {
           const key = norm(it.k); let e = agg.get(key);
-          if (!e) agg.set(key, e = { k: it.k, t: 0, c: [], news: [], img: '', ts: 0 });
-          e.t += it.t; e.c.push({ cc, t: it.t });
+          if (!e) agg.set(key, e = { k: it.k, t: 0, w: 0, c: [], news: [], img: '', ts: 0 });
+          e.t += it.t; e.w += it.t * (T1.has(cc) ? W1 : 1); e.c.push({ cc, t: it.t });
           it.news.forEach(n => { if (e.news.length < 8 && !e.news.some(z => z.u == n.u)) e.news.push(n); });
           if (!e.img && it.img) e.img = it.img;
           e.ts = Math.max(e.ts, it.ts);
@@ -95,7 +97,7 @@ async function refresh() {
     }
     if (ok < 3) { console.log('Trends: only ' + ok + ' countries answered, keeping old data'); return; }
     const items = [...agg.values()].map(e => ({ ...e, slug: slugify(e.k) })).filter(e => e.slug)
-      .sort((a, b) => b.t - a.t || b.c.length - a.c.length).slice(0, 100);
+      .sort((a, b) => b.w - a.w || b.c.length - a.c.length).slice(0, 100);
     const now = Date.now(), arch = S.arch || {};
     items.forEach(e => { arch[e.slug] = { ...e, seen: now }; });
     let ks = Object.keys(arch).filter(k => arch[k].seen > now - KEEP_DAYS * 864e5).sort((a, b) => arch[b].seen - arch[a].seen).slice(0, KEEP_MAX), na = {};
@@ -135,15 +137,15 @@ function page({ title, desc, path: pth, body, ld, noindex }) {
     + (ld ? '<script type="application/ld+json">' + JSON.stringify(ld).replace(/</g, '\\u003c') + '</script>' : '')
     + '<style>' + CSS + '</style></head><body><div class=w><div class=top><a class=logo href="' + esc(site()) + '">🎮 Squard<b>Games</b></a><a class=btn href="' + esc(site() + '/?utm_source=trends') + '">▶ Play &amp; Win</a></div>'
     + '<nav class=chips><a href="/trends">🔥 Trending now</a></nav>' + body
-    + '<footer>Data: Google Trends public feed, updated automatically every ' + EVERY / 36e5 + ' hours. © SquardGames</footer></div></body></html>';
+    + '<footer><p>Data: Google Trends public feed, updated automatically every ' + EVERY / 36e5 + ' hours. Independent site, not affiliated with Google LLC.</p><p><a href="/trends">Trends</a> · <a href="' + esc(site()) + '/about.html">About</a> · <a href="' + esc(site()) + '/contact.html">Contact</a> · <a href="' + esc(site()) + '/privacy.html">Privacy Policy</a> · <a href="' + esc(site()) + '/terms.html">Terms</a> · <a href="' + esc(site()) + '/disclaimer.html">Disclaimer</a></p><p>© 2026 SquardGames. All rights reserved.</p></footer></div></body></html>';
 }
 const cta = () => '<div class=cta><b>🎮 Bored of scrolling? Play free games on SquardGames</b><br>Quiz, Jewel, Birds &amp; more — top players win weekly prizes.<br><br><a class=btn href="' + esc(site() + '/?utm_source=trends') + '">▶ Play now</a></div>';
-const chipsC = () => '<div class=chips>' + GEOS.filter(c => S.geos[c]).map(c => '<a href="/trends/country/' + c.toLowerCase() + '">' + flag(c) + ' ' + esc(cname(c)) + '</a>').join('') + '</div>';
+const chipsC = () => '<div class=chips>' + GEOS.filter(c => S.geos[c]).sort((a, b) => T1.has(b) - T1.has(a)).map(c => '<a href="/trends/country/' + c.toLowerCase() + '">' + flag(c) + ' ' + esc(cname(c)) + '</a>').join('') + '</div>';
 const ctrs = e => e.c.slice().sort((a, b) => b.t - a.t).map(x => x.cc);
 
 function homePage() {
   const d = dstr(S.updated), top = S.items.slice(0, 50), names = top.slice(0, 5).map(x => x.k).join(', ');
-  const li = top.map(e => '<li><div><a class=k href="' + url(e.slug) + '">' + esc(e.k) + '</a><small><span class=tr>' + fmt(e.t) + ' searches</span> · ' + ctrs(e).slice(0, 6).map(flag).join(' ') + (e.c.length > 6 ? ' +' + (e.c.length - 6) : '') + '</small>'
+  const li = top.map(e => '<li><div><a class=k href="' + url(e.slug) + '">' + '<bdi>' + esc(e.k) + '</bdi>' + '</a><small><span class=tr>' + fmt(e.t) + ' searches</span> · ' + ctrs(e).slice(0, 6).map(flag).join(' ') + (e.c.length > 6 ? ' +' + (e.c.length - 6) : '') + '</small>'
     + (e.news[0] ? '<small>📰 ' + esc(e.news[0].t) + (e.news[0].s ? ' — ' + esc(e.news[0].s) : '') + '</small>' : '') + '</div></li>').join('');
   return page({
     title: 'Google Trends Today (' + d + '): Top Searches Worldwide — ' + (top[0] ? top[0].k : ''),
@@ -163,7 +165,7 @@ function countryPage(cc) {
     path: '/trends/country/' + cc.toLowerCase(),
     ld: { '@context': 'https://schema.org', '@type': 'ItemList', name: 'Google Trends ' + n + ' ' + d, itemListElement: L.map((e, i) => ({ '@type': 'ListItem', position: i + 1, name: e.k, url: base() + url(e.slug) })) },
     body: '<h1>' + flag(cc) + ' Trending Searches in ' + esc(n) + '</h1><p>What people in ' + esc(n) + ' are searching on Google today (' + esc(d) + ').</p>'
-      + '<ol class=l>' + L.map(e => '<li><div><a class=k href="' + url(e.slug) + '">' + esc(e.k) + '</a><small><span class=tr>' + fmt(e.t) + ' searches</span></small></div></li>').join('') + '</ol>'
+      + '<ol class=l>' + L.map(e => '<li><div><a class=k href="' + url(e.slug) + '">' + '<bdi>' + esc(e.k) + '</bdi>' + '</a><small><span class=tr>' + fmt(e.t) + ' searches</span></small></div></li>').join('') + '</ol>'
       + cta() + '<h2>🌍 Other countries</h2>' + chipsC() + '<p><a href="/trends">← Worldwide trends</a></p>'
   });
 }
@@ -179,7 +181,7 @@ function kwPage(e, live) {
       + '<p>' + esc(intro) + '</p>' + (live ? '' : '<p><i>This keyword is no longer in the live top list.</i></p>')
       + (cs.length ? '<h2>🌍 Where it is trending</h2><div class=chips>' + cs.map(c => '<a href="/trends/country/' + c.toLowerCase() + '">' + flag(c) + ' ' + esc(cname(c)) + '</a>').join('') + '</div>' : '')
       + (e.news.length ? '<h2>📰 Latest news about ' + esc(e.k) + '</h2><div class=news>' + e.news.map(n => '<a href="' + esc(n.u) + '" target=_blank rel="nofollow noopener">' + esc(n.t) + '</a><span class=n>' + esc(n.s) + '</span>').join('') + '</div>' : '')
-      + cta() + '<h2>More trending searches</h2><ol class=l>' + others.map(x => '<li><div><a class=k href="' + url(x.slug) + '">' + esc(x.k) + '</a><small><span class=tr>' + fmt(x.t) + ' searches</span></small></div></li>').join('') + '</ol><p><a href="/trends">← All worldwide trends</a></p>'
+      + cta() + '<h2>More trending searches</h2><ol class=l>' + others.map(x => '<li><div><a class=k href="' + url(x.slug) + '">' + '<bdi>' + esc(x.k) + '</bdi>' + '</a><small><span class=tr>' + fmt(x.t) + ' searches</span></small></div></li>').join('') + '</ol><p><a href="/trends">← All worldwide trends</a></p>'
   });
 }
 

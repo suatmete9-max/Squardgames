@@ -94,7 +94,7 @@ async function lb(){const T={d:['d',0],w:['w',0],lw:['w',1],rf:['rf',0]},pr=a=>a
    fin(await post('claim',d),'SquardGames Prize Claim - '+d.id,'Prize type: '+d.type+'\nPlayer ID: '+d.id+'\nWallet (BNB BEP20): '+d.wallet+'\nEmail: '+d.email)}}}
 // Google Trends box on the home page (list comes from the server, updates itself)
 async function trendBox(){const e=$('#tr');if(!e)return;const r=await get('trends?limit=10'),B=window.SQ_API||'';if(!r.items||!r.items.length||!$('#tr'))return;
- e.innerHTML='<div class=trb><h3>🔥 Trending on Google Now</h3><ol>'+r.items.map(x=>'<li><a href="'+B+'/trends/'+x.p+'" target=_blank rel=noopener>'+esc(x.k)+'</a><small>'+esc(x.tr)+'</small></li>').join('')+'</ol><a class=trm href="'+B+'/trends" target=_blank rel=noopener>See all worldwide trends »</a></div>'}
+ e.innerHTML='<div class=trb><h3>🔥 Trending on Google Now</h3><ol>'+r.items.map(x=>'<li><a href="'+B+'/trends/'+x.p+'" target=_blank rel=noopener>'+'<bdi>'+esc(x.k)+'</bdi></a><small>'+esc(x.tr)+'</small></li>').join('')+'</ol><a class=trm href="'+B+'/trends" target=_blank rel=noopener>See all worldwide trends »</a></div>'}
 async function showOn(){const o=await get('online'),n=o.n||0;$('#on').textContent=n+' '+t('on');
  const f=$('#fl');if(f)f.innerHTML=Object.entries(o.c||{}).map(([c,k])=>'<span class=pill style="background:#2a1a6e;color:#fff">'+flag(c)+' '+k+'</span>').join('')}
 $('#lg').innerHTML=Object.entries(LN).map(([k,v])=>'<option value='+k+(k==lang?' selected':'')+'>'+v+'</option>').join('');

@@ -122,7 +122,7 @@ function api(u,b,ip,j){const p=u.pathname.slice(5),now=Date.now();
   return j({e:'404'},404)}
  j({e:'404'},404)}
 const ORIGINS=(process.env.ALLOWED_ORIGINS||'https://squardgames.web.app,https://squardgames.firebaseapp.com').split(',').map(s=>s.trim());// website(s) allowed to call this API from another domain (Firebase Hosting)
-const MT={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.ico':'image/x-icon'};
+const MT={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.ico':'image/x-icon','.xml':'application/xml','.txt':'text/plain','.webmanifest':'application/manifest+json','.svg':'image/svg+xml'};
 http.createServer((q,r)=>{const u=new URL(q.url,'http://x'),ip=(q.headers['x-forwarded-for']||q.socket.remoteAddress||'').split(',')[0].trim();
  let cors={};const og=q.headers.origin;if(og&&(ORIGINS.includes(og)||/^http:\/\/localhost(:\d+)?$/.test(og)))cors={'access-control-allow-origin':og,'vary':'Origin','access-control-allow-headers':'content-type','access-control-allow-methods':'GET,POST,OPTIONS'};
  const j=(o,c=200)=>{r.writeHead(c,{'content-type':'application/json',...cors});r.end(JSON.stringify(o))};
