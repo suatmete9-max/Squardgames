@@ -54,8 +54,8 @@ function home(){const cards=Object.entries(TH).map(([k,v])=>'<a class=card href=
  +'<a class=lbbar href="#/lb"><span class=dec>💵<u class=coin>$</u></span><span class=trf>🏆</span><span class=mid><b>'+t('lb')+' »</b><small>'+(SAFE?'Top Players':'Top Players Win Real Cash!')+'</small></span><span class=dec><i class=nt style="--a:#ad1457;--b:#f06292">₹</i><u class=coin>₹</u></span></a>'
  +'<button class=invb id=iv>🎁 '+(SAFE?'Invite friends':t('inv').replace(/(\$\d+)/,'<b>$1</b>'))+' »</button>'
  +'<div class=winb><i class=ds>💵<u class=coin>$</u></i><div class=wm><span class=cr>👑</span><b>WIN BIG!</b><span class=cr>👑</span><small>'+(SAFE?'Play More • Climb Higher':'Play More • Get Rewards')+'</small></div><i class=ds>💴<u class=coin>₹</u></i></div>'
- +'<div class="ad adm" id=a3></div><div class=pid>👤 '+t('id')+': <b class=yl>'+U.id+'</b><s class=sep></s>'+flag(U.country)+' <b>'+esc(cn(U.country)||U.country||'')+'</b></div><div class=row id=fl></div><div class=row><button id=bk>🔑 Backup ID</button>'+(pushOK()?'<button id=bell>🔔 Get notifications</button>':'')+'</div>';
- $('#iv').onclick=inviteModal;ADS.ban2('a1');ADS.native('a3');$('#bk').onclick=()=>keyModal(false);if($('#bell'))$('#bell').onclick=enablePush;showOn()}
+ +'<div id=tr></div><div class="ad adm" id=a3></div><div class=pid>👤 '+t('id')+': <b class=yl>'+U.id+'</b><s class=sep></s>'+flag(U.country)+' <b>'+esc(cn(U.country)||U.country||'')+'</b></div><div class=row id=fl></div><div class=row><button id=bk>🔑 Backup ID</button>'+(pushOK()?'<button id=bell>🔔 Get notifications</button>':'')+'</div>';
+ $('#iv').onclick=inviteModal;ADS.ban2('a1');ADS.native('a3');trendBox();$('#bk').onclick=()=>keyModal(false);if($('#bell'))$('#bell').onclick=enablePush;showOn()}
 async function play(g){const v=TH[g],my=rt;cur=g;app.innerHTML='<div class=gm style="--c:'+v.c+';--bg:'+v.bg+';--f:'+v.f+'"><h2 style="margin:4px">'+v.i+' '+v.n+'</h2><div class=hud><span id=hs></span><span id=hi></span></div><div id=gb></div></div>';
  const hud=(s,i)=>{$('#hs')&&($('#hs').textContent=t('sc')+': '+Math.min(CAP,Math.round(s*(NRM[g]||1))));$('#hi')&&($('#hi').textContent=i||'')};
  let r=await post('start',{id:U.id,game:g});if(r.e=='player'){await heal();r=await post('start',{id:U.id,game:g})}if(my!=rt)return;
@@ -92,6 +92,9 @@ async function lb(){const T={d:['d',0],w:['w',0],lw:['w',1],rf:['rf',0]},pr=a=>a
  $('#cl').onclick=()=>{modal('<h2>'+t('claim')+'</h2><select id=ct2><option value=weekly>'+t('w')+'</option><option value=invite>'+t('rf')+'</option></select><input id=cp2 value="'+U.id+'" placeholder="'+t('pid')+'"><input id=cw placeholder="'+t('wl')+'"><input id=ce type=email placeholder="'+t('em')+'"><button class=big id=cs>'+t('send')+'</button><p id=cm></p>');
   $('#cs').onclick=async()=>{const d={id:$('#cp2').value,type:$('#ct2').value,wallet:$('#cw').value,email:$('#ce').value,nm:U.name,cc:U.country};
    fin(await post('claim',d),'SquardGames Prize Claim - '+d.id,'Prize type: '+d.type+'\nPlayer ID: '+d.id+'\nWallet (BNB BEP20): '+d.wallet+'\nEmail: '+d.email)}}}
+// Google Trends box on the home page (list comes from the server, updates itself)
+async function trendBox(){const e=$('#tr');if(!e)return;const r=await get('trends?limit=10'),B=window.SQ_API||'';if(!r.items||!r.items.length||!$('#tr'))return;
+ e.innerHTML='<div class=trb><h3>🔥 Trending on Google Now</h3><ol>'+r.items.map(x=>'<li><a href="'+B+'/trends/'+x.p+'" target=_blank rel=noopener>'+esc(x.k)+'</a><small>'+esc(x.tr)+'</small></li>').join('')+'</ol><a class=trm href="'+B+'/trends" target=_blank rel=noopener>See all worldwide trends »</a></div>'}
 async function showOn(){const o=await get('online'),n=o.n||0;$('#on').textContent=n+' '+t('on');
  const f=$('#fl');if(f)f.innerHTML=Object.entries(o.c||{}).map(([c,k])=>'<span class=pill style="background:#2a1a6e;color:#fff">'+flag(c)+' '+k+'</span>').join('')}
 $('#lg').innerHTML=Object.entries(LN).map(([k,v])=>'<option value='+k+(k==lang?' selected':'')+'>'+v+'</option>').join('');

@@ -97,3 +97,6 @@ nav{display:grid!important;grid-template-columns:repeat(4,auto);gap:6px!importan
 
 #pwabar{display:flex;justify-content:center;gap:6px;padding:2px 0 6px}#pwabar button{padding:3px 12px;font-size:13px;border-radius:20px;background:linear-gradient(#17c964,#0a8f43);border:1px solid #7dffb0}#pwabar #pwax{background:#1d1150;border-color:#7c4dff;padding:3px 9px}#pwabar[hidden]{display:none}
 #on:empty{display:none}
+
+.trb{margin:12px 0;padding:12px 14px;border-radius:16px;background:linear-gradient(#2a1458,#150a3a);border:2px solid #ff9100;box-shadow:0 0 16px #ff910066}
+.trb h3{margin:0 0 8px;color:#ffd23f}.trb ol{margin:0;padding-left:24px}.trb li{margin:5px 0}.trb li a{color:#fff;text-decoration:none;font-weight:700}.trb li small{opacity:.7;margin-left:8px;color:#5dff7a}.trm{display:block;text-align:center;margin-top:8px;color:#ffe14d;font-weight:700}

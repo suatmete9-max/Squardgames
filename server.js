@@ -1,3 +1,4 @@
+const TR=require('./trends');
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto');
 const PORT=process.env.PORT||3000,TZ=+(process.env.TZ_OFFSET||5.5),DB=path.join(process.env.DATA_DIR||__dirname,'data.json'),PUB=path.join(__dirname,'public');
 let db={players:{},scores:[],bonus:[],refs:[],msgs:[]};try{db=JSON.parse(fs.readFileSync(DB))}catch{}db.refs=db.refs||[];db.msgs=db.msgs||[];
@@ -126,12 +127,13 @@ http.createServer((q,r)=>{const u=new URL(q.url,'http://x'),ip=(q.headers['x-for
  let cors={};const og=q.headers.origin;if(og&&(ORIGINS.includes(og)||/^http:\/\/localhost(:\d+)?$/.test(og)))cors={'access-control-allow-origin':og,'vary':'Origin','access-control-allow-headers':'content-type','access-control-allow-methods':'GET,POST,OPTIONS'};
  const j=(o,c=200)=>{r.writeHead(c,{'content-type':'application/json',...cors});r.end(JSON.stringify(o))};
  if(q.method=='OPTIONS'){r.writeHead(204,cors);return r.end()}
+ if(TR.handle(q,r,u,j))return;   // Google Trends pages + /api/trends
  if(u.pathname.startsWith('/api/')){if(!ready)return j({e:'starting'},503);hits[ip]=(hits[ip]||0)+1;if(hits[ip]>240)return j({e:'rate'},429);
   if(q.method!='POST')return api(u,{},ip,j);let b='';q.on('data',d=>{b+=d;if(b.length>5e3)q.destroy()});
   return q.on('end',()=>{try{api(u,JSON.parse(b||'{}'),ip,j)}catch{j({e:'bad'},400)}})}
  let f=path.join(PUB,u.pathname=='/'?'index.html':u.pathname);if(!f.startsWith(PUB)||!fs.existsSync(f)||fs.statSync(f).isDirectory())f=path.join(PUB,'index.html');
  r.writeHead(200,{'content-type':MT[path.extname(f)]||'text/plain'});fs.createReadStream(f).pipe(r)}).listen(PORT,()=>console.log('SquardGames on '+PORT));
-init();
+init();TR.start();   // Google Trends: auto-updates itself every few hours
 const SELF=process.env.SELF_URL||process.env.RENDER_EXTERNAL_URL;   // Render gives RENDER_EXTERNAL_URL automatically
 if(SELF)setInterval(()=>fetch(SELF+'/api/online').catch(()=>{}),10*60*1000),console.log('Keep-alive ping every 10 min ->',SELF);
 process.on('SIGTERM',async()=>{try{if(SA){dirty=1;await Promise.race([flush(),new Promise(r=>setTimeout(r,8000))])}else save()}catch{}setTimeout(()=>process.exit(0),300)});

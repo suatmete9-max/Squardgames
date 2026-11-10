@@ -18,3 +18,9 @@ Without these, requests are still saved on the server and the player gets a "sen
 Read saved requests: set ADMIN_KEY=secret, then open /api/admin?key=secret
 ## Video break
 public/ads.js -> ADS.VIDEO_SRC = "https://.../video.mp4" (optional). Schedule is in the bottom of public/app.js.
+
+## Google Trends (SEO traffic) - automatic
+`trends.js` reads Google's public trending feed for ~32 countries, merges it into one worldwide top list and refreshes itself every 3 hours (set TRENDS_EVERY_HOURS to change). Nothing to run manually.
+Pages (on the Render URL): `/trends`, `/trends/country/in`, `/trends/<keyword>`, `/sitemap.xml`, `/robots.txt`. Home page of the game shows a "Trending on Google Now" box.
+Optional env: PUBLIC_URL (your Render URL), SITE_URL (game site, default https://squardgames.web.app).
+After deploy: Google Search Console -> add your Render URL -> Sitemaps -> submit `sitemap.xml`.
