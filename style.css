@@ -96,3 +96,4 @@ nav{display:grid!important;grid-template-columns:repeat(4,auto);gap:6px!importan
 .nat{background:#fff;border-radius:14px;padding:8px;overflow:hidden;max-width:100%;min-width:260px}
 
 #pwabar{display:flex;justify-content:center;gap:6px;padding:2px 0 6px}#pwabar button{padding:3px 12px;font-size:13px;border-radius:20px;background:linear-gradient(#17c964,#0a8f43);border:1px solid #7dffb0}#pwabar #pwax{background:#1d1150;border-color:#7c4dff;padding:3px 9px}#pwabar[hidden]{display:none}
+#on:empty{display:none}
