@@ -15,15 +15,16 @@ G.water=(el,hud,end,lv)=>{let sc=0,tm=120,sel=-1,tb=[],n=0,pz=0;const C=['#ff3d7
    if(tb.every(x=>!x.length||x.length==4&&x.every(y=>y==x[0]))){sc+=100+tm;n++;draw();pz=1;await lv(n);pz=0;return lvl()}}sel=-1}draw()}
  let iv;const go=()=>{iv=setInterval(()=>{if(pz||ADS.hold)return;tm--;hud(sc,'⏱ '+tm+' · Lv '+(n+1));if(tm<=0){clearInterval(iv);pz=1;end(sc)}},1000)};go();lvl();const cl=()=>clearInterval(iv);cl.resume=()=>{tm=30;pz=0;go();draw()};return cl};
 
-G.quiz=(el,hud,end,lv,S)=>{let dead=0,iv,pz=0,last=0;el.className='qz';
- const sndOn=()=>localStorage.sq_snd!=='0',hello=()=>{try{if(!sndOn()||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance('Hello, answer your question');u.lang='en-US';speechSynthesis.speak(u)}catch(e){}};
+G.quiz=(el,hud,end,lv,S)=>{let dead=0,iv,pz=0,last=0,qid=0,t0=0;el.className='qz';
+ const sndOn=()=>localStorage.sq_snd!=='0',speak=txt=>new Promise(res=>{try{if(!sndOn()||!window.speechSynthesis)return res();speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt);u.lang='en-US';let d=0;const f=()=>{if(!d){d=1;res()}};u.onend=f;u.onerror=f;setTimeout(f,9000);speechSynthesis.speak(u)}catch(e){res()}});
  const hd=(r,n)=>hud(r.score,'✅'+(r.right||0)+' · Lv '+(r.lv||r.level)+(n?' · Q'+n+'/10':'')+(r.idle?' · ⚠ '+r.idle+'/3':''));
- async function nxt(){const r=await post('qnext',{sid:S(),id:U.id});if(dead)return;if(!r.q){dead=1;el.innerHTML='<p>⚠ Could not load a question ('+(r.e||'server error')+').<br><button class=big onclick="route()">Retry</button></p>';return}
+ async function nxt(){const my=++qid,r=await post('qnext',{sid:S(),id:U.id});if(dead)return;if(!r.q){dead=1;el.innerHTML='<p>⚠ Could not load a question ('+(r.e||'server error')+').<br><button class=big onclick="route()">Retry</button></p>';return}
   hd(r,r.n);let tm=10;el.innerHTML='<div style="text-align:right"><button id=snd style="padding:2px 10px">'+(sndOn()?'🔊':'🔇')+'</button></div>'+(r.f?'<img class=fgb src="https://flagcdn.com/w160/'+r.f+'.png">':'')+'<div class=qq>'+esc(r.q)+'</div><div class=qt id=qt>⏱ 10</div><div class=bar><i id=br></i></div><div class=qo>'+r.o.map((o,i)=>'<button data-i='+i+'>'+esc(o)+'</button>').join('')+'</div>';
   const bs=[...el.querySelectorAll('.qo button')];bs.forEach(b=>b.onclick=()=>ans(+b.dataset.i,bs));
-  document.getElementById('snd').onclick=e=>{localStorage.sq_snd=sndOn()?'0':'1';e.target.textContent=sndOn()?'🔊':'🔇';if(!sndOn())try{speechSynthesis.cancel()}catch(x){}};hello();
+  document.getElementById('snd').onclick=e=>{localStorage.sq_snd=sndOn()?'0':'1';e.target.textContent=sndOn()?'🔊':'🔇';if(!sndOn())try{speechSynthesis.cancel()}catch(x){}};
+  t0=Date.now();await speak('Hello, answer your question. '+r.q);if(dead||my!==qid||pz)return;t0=Date.now();   // timer starts after the voice has finished
   iv=setInterval(()=>{if(ADS.hold)return;tm-=.1;const e=document.getElementById('br');if(e)e.style.width=tm/10*100+'%';const qt=document.getElementById('qt');if(qt)qt.textContent='⏱ '+Math.max(0,Math.ceil(tm));if(tm<=0){clearInterval(iv);ans(-1,bs)}},100)}
- async function ans(c,bs){if(dead||pz)return;pz=1;clearInterval(iv);bs.forEach(b=>b.disabled=true);const a=await post('qans',{sid:S(),id:U.id,c});if(dead)return;
+ async function ans(c,bs){if(dead||pz)return;pz=1;clearInterval(iv);try{speechSynthesis.cancel()}catch(x){}bs.forEach(b=>b.disabled=true);const a=await post('qans',{sid:S(),id:U.id,c,th:(Date.now()-t0)/1000});if(dead)return;
   if(a.ci==null){dead=1;return end(0)}last=a.score;
   bs[a.ci]&&bs[a.ci].classList.add('ok');if(c>=0&&c!=a.ci)bs[c].classList.add('no');hd(a);await wait(1200);if(dead)return;
   if(a.over){dead=1;return end(a.score)}

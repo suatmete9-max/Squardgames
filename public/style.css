@@ -53,7 +53,7 @@ h2{background:linear-gradient(90deg,#ff2d95,#ffe600,#00f5a0,#00d9ff);-webkit-bac
 .qz .qq{font-weight:600;line-height:1.35}.qz .qo button{font-weight:600;font-size:17px}.qt{font-size:20px;font-weight:700;color:#ffe14d;margin-top:4px}.adm{margin:14px auto}
 
 #rw{position:fixed;left:8px;right:8px;bottom:8px;z-index:30;display:flex;gap:8px;align-items:center;justify-content:center;background:#1a0f40;border:2px solid #ffb300;border-radius:14px;padding:8px 10px;box-shadow:0 0 18px #ff9100}#rw span{flex:1;font-size:14px}
-.safe #pw,.safe .pzs,.safe .ribbon,.safe #cl,.safe #mc,.safe .cash,.safe #wn,.safe .wh,.safe [data-k=rf],.safe [data-k=lw]{display:none!important}
+.safe #pw,.safe #hist,.safe .pzs,.safe .ribbon,.safe #cl,.safe #mc,.safe .cash,.safe #wn,.safe .wh,.safe [data-k=rf],.safe [data-k=lw]{display:none!important}
 
 .cash{display:flex;justify-content:center;align-items:center;gap:8px;margin:4px 0 12px;flex-wrap:wrap}.cm{font-size:30px;animation:pu 2s infinite}
 .nt{font-style:normal;width:62px;height:36px;display:grid;place-items:center;font:700 20px Fredoka;border-radius:6px;background:linear-gradient(135deg,var(--a),var(--b));border:2px solid #fff9;box-shadow:0 0 12px var(--b),inset 0 0 0 3px #fff3;transform:rotate(-5deg)}.nt:nth-child(even){transform:rotate(4deg)}
@@ -92,3 +92,7 @@ nav{display:grid!important;grid-template-columns:repeat(4,auto);gap:6px!importan
 .pid{display:flex!important;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;font-size:clamp(13px,3.8vw,18px)}.pid .yl{color:#ffe14d;font-size:1.1em}.pid .sep{width:2px;height:22px;background:#fff6}.pid .fg{height:22px}
 
 .pwh,.pwr{display:grid;grid-template-columns:1fr 70px 100px;gap:6px;padding:9px 10px;align-items:center}.pwh{background:#2a1a6e;font-weight:700}.pwr{border-top:1px solid #fff2}.pwr b{color:#ffe14d;font-size:18px}
+
+.nat{background:#fff;border-radius:14px;padding:8px;overflow:hidden;max-width:100%;min-width:260px}
+
+#pwabar{display:flex;justify-content:center;gap:6px;padding:2px 0 6px}#pwabar button{padding:3px 12px;font-size:13px;border-radius:20px;background:linear-gradient(#17c964,#0a8f43);border:1px solid #7dffb0}#pwabar #pwax{background:#1d1150;border-color:#7c4dff;padding:3px 9px}#pwabar[hidden]{display:none}
