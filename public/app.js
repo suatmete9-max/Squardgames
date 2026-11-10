@@ -115,8 +115,8 @@ setInterval(()=>{if(U){post('ping',{id:U.id});showOn()}},20000);if(U)post('ping'
  if(ios&&ok)bar.hidden=false}
 
 // ===== Push notifications (text + image) =====
-const loadScript=src=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.append(s)});
-const pushOK=()=>!!(window.SQ_FB&&SQ_FB.apiKey&&'Notification' in window&&'serviceWorker' in navigator&&!window.SQApp&&localStorage.sq_push!=='1');
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.append(s)})}
+function pushOK(){return !!(window.SQ_FB&&SQ_FB.apiKey&&'Notification' in window&&'serviceWorker' in navigator&&!window.SQApp&&localStorage.sq_push!=='1')}
 async function enablePush(){try{const FB=window.SQ_FB;await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
  const p=await Notification.requestPermission();if(p!=='granted')return say('Notifications are blocked. You can allow them in the browser settings.');
  if(!firebase.apps.length)firebase.initializeApp(FB);const reg=await navigator.serviceWorker.ready,tk=await firebase.messaging().getToken({vapidKey:FB.vapidKey,serviceWorkerRegistration:reg});
